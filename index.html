@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Улучшенный GPT-подобный Чат с ИИ</title>
+    <title>Улучшенный ИИ-Ассистент</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -18,6 +18,9 @@
             --sidebar-hover: #2a2b32;
             --scrollbar-thumb: #565869;
             --scrollbar-track: #40414f;
+            --accent-color: #19c37d;
+            --error-color: #ef4146;
+            --success-color: #34d399;
         }
         .dark-mode {
             --primary-color: #19c37d;
@@ -31,6 +34,7 @@
             --sidebar-hover: #2a2b32;
             --scrollbar-thumb: #565869;
             --scrollbar-track: #40414f;
+            --accent-color: #10a37f;
         }
         * {
             box-sizing: border-box;
@@ -52,10 +56,10 @@
             width: 260px;
             background-color: var(--sidebar-bg);
             color: #ffffff;
-            padding: 10px;
+            padding: 20px;
             display: flex;
             flex-direction: column;
-            transition: background-color 0.3s ease;
+            transition: background-color 0.3s ease, transform 0.3s ease;
             overflow-y: auto;
         }
         .sidebar::-webkit-scrollbar {
@@ -69,21 +73,26 @@
             background-color: var(--scrollbar-track);
         }
         .new-chat-btn {
-            background-color: #ffffff1a;
-            border: 1px solid #ffffff3d;
+            background-color: var(--accent-color);
+            border: none;
             color: #ffffff;
             padding: 12px;
             border-radius: 6px;
             text-align: left;
             cursor: pointer;
-            transition: background-color 0.3s ease;
+            transition: background-color 0.3s ease, transform 0.2s ease;
             margin-bottom: 20px;
             display: flex;
             align-items: center;
             font-size: 14px;
+            font-weight: 600;
         }
         .new-chat-btn:hover {
-            background-color: #ffffff3d;
+            background-color: var(--primary-color);
+            transform: translateY(-2px);
+        }
+        .new-chat-btn:active {
+            transform: translateY(0);
         }
         .new-chat-btn svg {
             margin-right: 10px;
@@ -97,13 +106,14 @@
             cursor: pointer;
             border-radius: 6px;
             margin-bottom: 5px;
-            transition: background-color 0.3s ease;
+            transition: background-color 0.3s ease, transform 0.2s ease;
             font-size: 14px;
             display: flex;
             align-items: center;
         }
         .chat-item:hover {
             background-color: var(--sidebar-hover);
+            transform: translateX(5px);
         }
         .chat-item svg {
             margin-right: 10px;
@@ -121,13 +131,16 @@
             color: var(--text-color);
             text-align: center;
             padding: 15px;
-            font-size: 16px;
+            font-size: 18px;
             font-weight: 600;
             border-bottom: 1px solid var(--border-color);
             display: flex;
             justify-content: space-between;
             align-items: center;
             transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+            position: sticky;
+            top: 0;
+            z-index: 10;
         }
         .theme-toggle {
             background: none;
@@ -137,15 +150,16 @@
             font-size: 20px;
             padding: 5px;
             border-radius: 50%;
-            transition: background-color 0.3s ease;
+            transition: background-color 0.3s ease, transform 0.2s ease;
         }
         .theme-toggle:hover {
             background-color: rgba(0, 0, 0, 0.1);
+            transform: rotate(15deg);
         }
         .chat-messages {
             flex: 1;
             overflow-y: auto;
-            padding: 20px 0;
+            padding: 20px;
             display: flex;
             flex-direction: column;
         }
@@ -161,49 +175,80 @@
         }
         .message-container {
             display: flex;
-            padding: 20px;
-            transition: background-color 0.3s ease;
+            margin-bottom: 20px;
+            animation: fadeIn 0.5s ease;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
         .message-container.user {
-            background-color: var(--user-message-bg);
+            justify-content: flex-end;
         }
-        .message-container.bot {
+        .message {
+            max-width: 80%;
+            padding: 12px 16px;
+            border-radius: 18px;
+            font-size: 16px;
+            line-height: 1.4;
+            transition: transform 0.2s ease;
+        }
+        .message:hover {
+            transform: translateY(-2px);
+        }
+        .user .message {
+            background-color: var(--primary-color);
+            color: #ffffff;
+            border-bottom-right-radius: 4px;
+        }
+        .bot .message {
             background-color: var(--bot-message-bg);
+            color: var(--text-color);
+            border-bottom-left-radius: 4px;
         }
         .avatar {
-            width: 30px;
-            height: 30px;
-            border-radius: 2px;
-            margin-right: 15px;
-            background-color: var(--primary-color);
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            margin: 0 10px;
             display: flex;
             align-items: center;
             justify-content: center;
             font-weight: bold;
             color: #ffffff;
+            font-size: 16px;
+            transition: transform 0.2s ease;
+        }
+        .avatar:hover {
+            transform: scale(1.1);
         }
         .user .avatar {
             background-color: #5436da;
+            order: 1;
         }
-        .message {
-            flex: 1;
-            font-size: 16px;
-            line-height: 1.5;
+        .bot .avatar {
+            background-color: var(--primary-color);
         }
         .chat-input-container {
             background-color: var(--secondary-color);
             border-top: 1px solid var(--border-color);
             padding: 20px;
             transition: background-color 0.3s ease, border-color 0.3s ease;
+            position: sticky;
+            bottom: 0;
+            z-index: 10;
         }
         .chat-input {
             display: flex;
             background-color: var(--input-bg);
             border: 1px solid var(--border-color);
-            border-radius: 6px;
+            border-radius: 8px;
             overflow: hidden;
-            transition: background-color 0.3s ease, border-color 0.3s ease;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            transition: background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+        }
+        .chat-input:focus-within {
+            box-shadow: 0 0 0 2px var(--primary-color);
         }
         #user-input {
             flex: 1;
@@ -225,32 +270,41 @@
             border: none;
             padding: 10px 15px;
             cursor: pointer;
-            transition: background-color 0.3s ease;
+            transition: background-color 0.3s ease, transform 0.2s ease;
         }
         #send-button:hover {
             background-color: var(--secondary-color);
+            transform: translateX(-2px);
+        }
+        #send-button:active {
+            transform: translateX(0);
         }
         #send-button:disabled {
             opacity: 0.5;
             cursor: not-allowed;
         }
         .send-icon {
-            width: 20px;
-            height: 20px;
+            width: 24px;
+            height: 24px;
             fill: var(--primary-color);
+            transition: transform 0.2s ease;
+        }
+        #send-button:hover .send-icon {
+            transform: rotate(-15deg);
         }
         .typing-indicator {
             display: flex;
-            padding: 20px;
-            background-color: var(--bot-message-bg);
-            transition: background-color 0.3s ease;
-        }
-        .typing-indicator .avatar {
-            background-color: var(--primary-color);
+            align-items: center;
+            margin-bottom: 20px;
         }
         .typing-indicator .message {
             display: flex;
             align-items: center;
+            background-color: var(--bot-message-bg);
+            color: var(--text-color);
+            border-radius: 18px;
+            padding: 12px 16px;
+            font-size: 16px;
         }
         .typing-indicator span {
             height: 8px;
@@ -288,11 +342,12 @@
             display: flex;
             align-items: center;
             font-size: 14px;
-            transition: background-color 0.3s ease;
+            transition: background-color 0.3s ease, transform 0.2s ease;
             border-radius: 6px;
         }
         .sidebar-footer button:hover {
             background-color: var(--sidebar-hover);
+            transform: translateX(5px);
         }
         .sidebar-footer button svg {
             margin-right: 10px;
@@ -307,16 +362,123 @@
             background-color: var(--input-bg);
             color: var(--text-color);
             border: 1px solid var(--border-color);
+            font-size: 14px;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 10px center;
+            background-size: 16px;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
         }
-        .message pre {
-            background-color: #f0f0f0;
-            padding: 10px;
-            border-radius: 5px;
-            overflow-x: auto;
-            font-family: 'Courier New', Courier, monospace;
+        .topic-selector select:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 2px var(--primary-color);
         }
-        .dark-mode .message pre {
-            background-color: #2a2a2a;
+        .customization-panel {
+            background-color: var(--bot-message-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+        .customization-panel h3 {
+            margin-bottom: 10px;
+            font-size: 16px;
+            color: var(--text-color);
+        }
+        .avatar-options, .theme-options {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        .avatar-option, .theme-option {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: border-color 0.3s ease, transform 0.3s ease;
+        }
+        .avatar-option:hover, .theme-option:hover {
+            transform: scale(1.1);
+        }
+        .avatar-option.selected, .theme-option.selected {
+            border-color: var(--primary-color);
+        }
+        .tooltip {
+            position:  relative;
+            display: inline-block;
+        }
+        .tooltip .tooltiptext {
+            visibility: hidden;
+            width: 120px;
+            background-color: var(--text-color);
+            color: var(--secondary-color);
+            text-align: center;
+            border-radius: 6px;
+            padding: 5px;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            margin-left: -60px;
+            opacity: 0;
+            transition: opacity 0.3s;
+            font-size: 12px;
+        }
+        .tooltip:hover .tooltiptext {
+            visibility: visible;
+            opacity: 1;
+        }
+        .hamburger-menu {
+            display: none;
+            width: 30px;
+            height: 30px;
+            position: relative;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            padding: 0;
+            z-index: 10;
+        }
+        .hamburger-menu span {
+            display: block;
+            position: absolute;
+            height: 3px;
+            width: 100%;
+            background: var(--text-color);
+            border-radius: 3px;
+            opacity: 1;
+            left: 0;
+            transform: rotate(0deg);
+            transition: .25s ease-in-out;
+        }
+        .hamburger-menu span:nth-child(1) {
+            top: 0px;
+        }
+        .hamburger-menu span:nth-child(2),
+        .hamburger-menu span:nth-child(3) {
+            top: 10px;
+        }
+        .hamburger-menu span:nth-child(4) {
+            top: 20px;
+        }
+        .hamburger-menu.open span:nth-child(1) {
+            top: 10px;
+            width: 0%;
+            left: 50%;
+        }
+        .hamburger-menu.open span:nth-child(2) {
+            transform: rotate(45deg);
+        }
+        .hamburger-menu.open span:nth-child(3) {
+            transform: rotate(-45deg);
+        }
+        .hamburger-menu.open span:nth-child(4) {
+            top: 10px;
+            width: 0%;
+            left: 50%;
         }
         @media (max-width: 768px) {
             .app-container {
@@ -324,18 +486,32 @@
             }
             .sidebar {
                 width: 100%;
-                height: auto;
-                max-height: 200px;
+                max-height: 100%;
+                position: fixed;
+                left: -100%;
+                top: 0;
+                bottom: 0;
+                z-index: 1000;
+                transition: left 0.3s ease;
+            }
+            .sidebar.open {
+                left: 0;
             }
             .chat-container {
-                height: calc(100% - 200px);
+                width: 100%;
+            }
+            .hamburger-menu {
+                display: flex;
+            }
+            .chat-header {
+                justify-content: space-between;
             }
         }
     </style>
 </head>
 <body>
     <div class="app-container">
-        <div class="sidebar">
+        <div class="sidebar" id="sidebar">
             <button class="new-chat-btn">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <line x1="12" y1="5" x2="12" y2="19"></line>
@@ -355,6 +531,45 @@
                     <option value="psychology">Психология</option>
                     <option value="economics">Экономика</option>
                 </select>
+            </div>
+            <div class="customization-panel">
+                <h3>Настройка интерфейса:</h3>
+                <div class="avatar-options">
+                    <div class="tooltip">
+                        <div class="avatar-option selected" style="background-color: #10a37f;"></div>
+                        <span class="tooltiptext">Классический</span>
+                    </div>
+                    <div class="tooltip">
+                        <div class="avatar-option" style="background-color: #3498db;"></div>
+                        <span class="tooltiptext">Океан</span>
+                    </div>
+                    <div class="tooltip">
+                        <div class="avatar-option" style="background-color: #e74c3c;"></div>
+                        <span class="tooltiptext">Рубин</span>
+                    </div>
+                    <div class="tooltip">
+                        <div class="avatar-option" style="background-color: #f39c12;"></div>
+                        <span class="tooltiptext">Янтарь</span>
+                    </div>
+                </div>
+                <div class="theme-options">
+                    <div class="tooltip">
+                        <div class="theme-option selected" style="background-color: #ffffff;"></div>
+                        <span class="tooltiptext">Светлая тема</span>
+                    </div>
+                    <div class="tooltip">
+                        <div class="theme-option" style="background-color: #343541;"></div>
+                        <span class="tooltiptext">Темная тема</span>
+                    </div>
+                    <div class="tooltip">
+                        <div class="theme-option" style="background-color: #f0f0f0;"></div>
+                        <span class="tooltiptext">Серая тема</span>
+                    </div>
+                    <div class="tooltip">
+                        <div class="theme-option" style="background-color: #2c3e50;"></div>
+                        <span class="tooltiptext">Ночная тема</span>
+                    </div>
+                </div>
             </div>
             <div class="chat-history" id="chat-history"></div>
             <div class="sidebar-footer">
@@ -377,14 +592,20 @@
         </div>
         <div class="chat-container">
             <div class="chat-header">
-                <span>Улучшенный GPT-подобный Чат с ИИ</span>
+                <button class="hamburger-menu" id="hamburger-menu">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+                <span>Улучшенный ИИ-Ассистент</span>
                 <button class="theme-toggle" id="theme-toggle">🌓</button>
             </div>
             <div class="chat-messages" id="chat-messages"></div>
             <div class="chat-input-container">
                 <div class="chat-input">
                     <textarea id="user-input" placeholder="Введите сообщение..." rows="1"></textarea>
-                    <button  id="send-button" disabled>
+                    <button id="send-button" disabled>
                         <svg class="send-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                             <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
                         </svg>
@@ -404,6 +625,10 @@
         const clearConversationsBtn = document.getElementById('clear-conversations');
         const exportDataBtn = document.getElementById('export-data');
         const topicSelect = document.getElementById('topic-select');
+        const avatarOptions = document.querySelectorAll('.avatar-option');
+        const themeOptions = document.querySelectorAll('.theme-option');
+        const hamburgerMenu = document.getElementById('hamburger-menu');
+        const sidebar = document.getElementById('sidebar');
 
         let conversationContext = {
             topic: 'general',
@@ -492,90 +717,71 @@
         function generateTopicResponse(topic, category) {
             const responses = {
                 general: `Ах, ${topic} - это действительно увлекательная область! Она охватывает множество аспектов нашей жизни и постоянно развивается. Есть ли какой-то конкретный аспект ${topic}, который вас особенно интересует?`,
-                science: `${topic.charAt(0).toUpperCase() + topic.slice(1)} - это захватывающая область науки. Она помогает нам лучше понять мир вокруг нас и открывает новые горизонты. Какие последние достижения в ${topic} вас больше всего впечатляют?`,
-                technology: `${topic.charAt(0).toUpperCase() + topic.slice(1)} - это одна из самых быстро развивающихся областей технологии. Она меняет наш мир и открывает новые возможности. Как вы думаете, какое влияние ${topic} окажет на нашу жизнь в ближайшем будущем?`,
-                history: `${topic.charAt(0).toUpperCase() + topic.slice(1)} - это важный период в истории человечества. Он полон значимых событий и перемен, которые повлияли на ход мировой истории. Какие аспекты ${topic} вы находите наиболее интересными или важными?`,
-                literature: `${topic.charAt(0).toUpperCase() + topic.slice(1)} - это замечательный жанр литературы, который позволяет авторам выразить свои идеи и чувства уникальным образом. У вас есть любимые произведения или авторы в жанре ${topic}?`,
-                art: `${topic.charAt(0).toUpperCase() + topic.slice(1)} - это удивительная форма искусства, которая позволяет художникам выразить свое видение мира. Какие работы или художники в области ${topic} вас особенно вдохновляют?`,
-                philosophy: `${topic.charAt(0).toUpperCase() + topic.slice(1)} - это глубокая область философии, которая заставляет нас задуматься о фундаментальных вопросах бытия. Как вы думаете, какое влияние идеи ${topic} оказывают на нашу повседневную жизнь и мировоззрение?`,
-                psychology: `${topic.charAt(0).toUpperCase() + topic.slice(1)} - это интересное направление в психологии, которое предлагает уникальный взгляд на человеческое поведение и мышление. Как вы думаете, насколько идеи ${topic} применимы в современном мире?`,
-                economics: `${topic.charAt(0).toUpperCase() + topic.slice(1)} играет важную роль в понимании экономических процессов. Как вы думаете, какие аспекты ${topic} наиболее актуальны в текущей экономической ситуации?`
+                science: `${topic.charAt(0).toUpperCase() + topic.slice(1)} - это захватывающая область науки. Она помогает нам лучше понять мир вокруг нас и открывает новые горизонты.  Какие последние достижения в ${topic} вас больше всего впечатляют?`,
+                technology: `${topic.charAt(0).toUpperCase() + topic.slice(1)} - это одна из самых быстро развивающихся областей технологий. Она меняет наш мир и открывает новые возможности. Как вы думаете, как ${topic} повлияет на нашу жизнь в ближайшем будущем?`,
+                history: `История ${topic} - это увлекательное путешествие во времени. Она помогает нам понять, как формировалось наше общество и культура. Какой период в истории ${topic} вы находите наиболее интересным и почему?`,
+                literature: `${topic.charAt(0).toUpperCase() + topic.slice(1)} в литературе - это богатый и разнообразный жанр. Он позволяет авторам исследовать человеческую природу и общество с разных углов. Есть ли у вас любимые произведения или авторы в жанре ${topic}?`,
+                art: `${topic.charAt(0).toUpperCase() + topic.slice(1)} в искусстве - это мощный способ самовыражения и отражения общества. Оно позволяет художникам передавать эмоции и идеи уникальным образом. Какие работы или художники в области ${topic} вас особенно вдохновляют?`,
+                philosophy: `Философия ${topic} затрагивает фундаментальные вопросы о нашем существовании и понимании мира. Она помогает нам критически мыслить и формировать свои взгляды. Какие идеи или мыслители в области ${topic} вы находите наиболее влиятельными?`,
+                psychology: `${topic.charAt(0).toUpperCase() + topic.slice(1)} в психологии помогает нам лучше понять человеческое поведение и мышление. Это область постоянно развивается, предлагая новые подходы к пониманию нашего разума. Какие аспекты ${topic} вы находите наиболее интригующими?`,
+                economics: `${topic.charAt(0).toUpperCase() + topic.slice(1)} играет важную роль в понимании экономических процессов и принятии решений. Эта область постоянно эволюционирует, адаптируясь к изменениям в глобальной экономике. Как вы думаете, какие ключевые вызовы стоят перед ${topic} сегодня?`
             };
 
             return responses[category] || responses.general;
         }
 
-        function generateGeneralResponse(input, category) {
-            const responses = [
-                `Интересная мысль о ${category}! Можете ли вы развить ее подробнее? Как вы пришли к такому выводу?`,
-                `Это действительно захватывающая тема в области ${category}. Какие аспекты вы находите наиболее интригующими?`,
-                `Ваш взгляд на ${category} очень интересен. Как вы думаете, какое влияние это может оказать на общество в целом?`,
-                `Спасибо, что поделились своим мнением о ${category}. А вы сталкивались с альтернативными точками зрения на эту тему?`,
-                `Это действительно заставляет задуматься о ${category}. Как вы считаете, как эта идея может развиваться в будущем?`
+        function generateGeneralResponse(message, category) {
+            const generalResponses = [
+                `Интересный вопрос! В контексте ${category}, это может иметь несколько аспектов. Какой именно аспект вас интересует больше всего?`,
+                `Это действительно захватывающая тема в области ${category}. Она связана со многими другими концепциями. Хотели бы вы углубиться в какой-то конкретный аспект?`,
+                `В ${category} этот вопрос часто вызывает оживленные дискуссии. Есть несколько точек зрения на эту тему. Какая из них вам ближе?`,
+                `Это отличный вопрос! В контексте ${category}, он затрагивает множество интересных аспектов. С чего бы вы хотели начать обсуждение?`,
+                `В области ${category} этот вопрос имеет богатую историю исследований. Есть ли какой-то конкретный период или подход, который вас особенно интересует?`
             ];
-            return responses[Math.floor(Math.random() * responses.length)];
+
+            return generalResponses[Math.floor(Math.random() * generalResponses.length)];
         }
 
-        function addMessage(message, isUser) {
-            const messageContainer = document.createElement('div');
-            messageContainer.classList.add('message-container');
-            messageContainer.classList.add(isUser ? 'user' : 'bot');
-
-            const avatar = document.createElement('div');
-            avatar.classList.add('avatar');
-            avatar.textContent = isUser ? 'В' : 'ИИ';
-
+        function addMessage(content, isUser = false) {
             const messageElement = document.createElement('div');
-            messageElement.classList.add('message');
-            messageElement.innerHTML = formatMessage(message);
+            messageElement.classList.add('message-container');
+            messageElement.classList.add(isUser ? 'user' : 'bot');
 
-            messageContainer.appendChild(avatar);
-            messageContainer.appendChild(messageElement);
-            chatMessages.appendChild(messageContainer);
+            const avatarElement = document.createElement('div');
+            avatarElement.classList.add('avatar');
+            avatarElement.textContent = isUser ? 'В' : 'ИИ';
+
+            const messageContent = document.createElement('div');
+            messageContent.classList.add('message');
+            messageContent.textContent = content;
+
+            messageElement.appendChild(avatarElement);
+            messageElement.appendChild(messageContent);
+
+            chatMessages.appendChild(messageElement);
             chatMessages.scrollTop = chatMessages.scrollHeight;
-
-            if (!isUser) {
-                updateChatHistory(message);
-            }
-        }
-
-        function formatMessage(message) {
-            // Заменяем URL на кликабельные ссылки
-            const urlRegex = /(https?:\/\/[^\s]+)/g;
-            message = message.replace(urlRegex, '<a href="$1" target="_blank">$1</a>');
-
-            // Заменяем текст в обратных кавычках на блоки кода
-            const codeRegex = /`([^`]+)`/g;
-            message = message.replace(codeRegex, '<code>$1</code>');
-
-            // Заменяем текст между тройными обратными кавычками на блоки pre
-            const preRegex = /```([\s\S]+?)```/g;
-            message = message.replace(preRegex, '<pre>$1</pre>');
-
-            return message;
         }
 
         function showTypingIndicator() {
-            const indicatorContainer = document.createElement('div');
-            indicatorContainer.className = 'typing-indicator';
-
-            const avatar = document.createElement('div');
-            avatar.classList.add('avatar');
-            avatar.textContent = 'ИИ';
-
-            const indicator = document.createElement('div');
-            indicator.className = 'message';
-            indicator.innerHTML = '<span></span><span></span><span></span>';
-
-            indicatorContainer.appendChild(avatar);
-            indicatorContainer.appendChild(indicator);
-            chatMessages.appendChild(indicatorContainer);
+            const typingIndicator = document.createElement('div');
+            typingIndicator.classList.add('typing-indicator');
+            typingIndicator.innerHTML = `
+                <div class="avatar">ИИ</div>
+                <div class="message">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </div>
+            `;
+            chatMessages.appendChild(typingIndicator);
             chatMessages.scrollTop = chatMessages.scrollHeight;
-            return indicatorContainer;
         }
 
-        function removeTypingIndicator(indicator) {
-            chatMessages.removeChild(indicator);
+        function removeTypingIndicator() {
+            const typingIndicator = document.querySelector('.typing-indicator');
+            if (typingIndicator) {
+                typingIndicator.remove();
+            }
         }
 
         function handleUserInput() {
@@ -583,99 +789,125 @@
             if (message) {
                 addMessage(message, true);
                 userInput.value = '';
-                updateSendButtonState();
-                adjustTextareaHeight();
-
-                const typingIndicator = showTypingIndicator();
+                sendButton.disabled = true;
+                showTypingIndicator();
 
                 setTimeout(() => {
-                    removeTypingIndicator(typingIndicator);
-                    const botResponse = generateResponse(message);
-                    addMessage(botResponse, false);
-                }, Math.random() * 1500 + 500);
+                    removeTypingIndicator();
+                    const response = generateResponse(message);
+                    addMessage(response);
+                }, Math.random() * 1000 + 500);
             }
-        }
-
-        function updateSendButtonState() {
-            sendButton.disabled = userInput.value.trim() === '';
         }
 
         function adjustTextareaHeight() {
             userInput.style.height = 'auto';
-            userInput.style.height = (userInput.scrollHeight) + 'px';
+            userInput.style.height = userInput.scrollHeight + 'px';
         }
 
-        function updateChatHistory(message) {
-            const chatItem = document.createElement('div');
-            chatItem.classList.add('chat-item');
-            chatItem.innerHTML = `
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-                </svg>
-                ${message.substring(0, 30)}${message.length > 30 ? '...' : ''}
-            `;
-            chatHistory.insertBefore(chatItem, chatHistory.firstChild);
-        }
-
-        function startNewChat() {
-            chatSessions.push([...chatMessages.children]);
-            chatMessages.innerHTML = '';
-            chatHistory.innerHTML = '';
-            conversationContext = {
-                topic: 'general',
-                userInfo: {},
-                recentMessages: []
-            };
-            addMessage("Здравствуйте! Я улучшенный GPT-подобный ИИ-ассистент. Чем я могу вам помочь сегодня?", false);
-        }
-
-        function toggleTheme() {
-            document.body.classList.toggle('dark-mode');
-            themeToggle.textContent = document.body.classList.contains('dark-mode') ? '☀️' : '🌓';
-        }
-
-        function clearConversations() {
-            chatSessions = [];
-            chatHistory.innerHTML = '';
-            startNewChat();
-        }
-
-        function exportData() {
-            const data = JSON.stringify(chatSessions);
-            const blob = new Blob([data], {type: 'application/json'});
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'chat_history.json';
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-        }
-
-        sendButton.addEventListener('click', handleUserInput);
         userInput.addEventListener('input', () => {
-            updateSendButtonState();
+            sendButton.disabled = userInput.value.trim() === '';
             adjustTextareaHeight();
         });
-        userInput.addEventListener('keydown', (event) => {
-            if (event.key === 'Enter' && !event.shiftKey) {
-                event.preventDefault();
+
+        userInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
                 handleUserInput();
             }
         });
-        newChatBtn.addEventListener('click', startNewChat);
-        themeToggle.addEventListener('click', toggleTheme);
-        clearConversationsBtn.addEventListener('click', clearConversations);
-        exportDataBtn.addEventListener('click', exportData);
-        topicSelect.addEventListener('change', () => {
-            conversationContext.topic = topicSelect.value;
+
+        sendButton.addEventListener('click', handleUserInput);
+
+        newChatBtn.addEventListener('click', () => {
+            chatMessages.innerHTML = '';
+            addMessage("Здравствуйте! Я улучшенный ИИ-ассистент. Готов ответить на ваши вопросы и обсудить интересующие вас темы. О чем бы вы хотели поговорить сегодня?");
         });
 
-        // Initial bot message
-        setTimeout(() => {
-            addMessage("Здравствуйте! Я улучшенный GPT-подобный ИИ-ассистент с расширенными знаниями в различных областях. Готов обсудить с вами широкий спектр тем - от науки и технологий до искусства и философии. Вы можете выбрать интересующую вас тему в меню слева. Что бы вы хотели обсудить сегодня?", false);
-        }, 500);
+        themeToggle.addEventListener('click', () => {
+            document.body.classList.toggle('dark-mode');
+        });
+
+        clearConversationsBtn.addEventListener('click', () => {
+            chatSessions = [];
+            chatHistory.innerHTML = '';
+            chatMessages.innerHTML = '';
+            addMessage("Все беседы очищены. Начнем новый разговор?");
+        });
+
+        exportDataBtn.addEventListener('click', () => {
+            const dataStr = JSON.stringify(chatSessions);
+            const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+            const exportFileDefaultName = 'chat_history.json';
+
+            const linkElement = document.createElement('a');
+            linkElement.setAttribute('href', dataUri);
+            linkElement.setAttribute('download', exportFileDefaultName);
+            linkElement.click();
+        });
+
+        topicSelect.addEventListener('change', () => {
+            conversationContext.topic = topicSelect.value;
+            addMessage(`Отлично! Давайте обсудим тему "${topicSelect.options[topicSelect.selectedIndex].text}". Что именно вас интересует в этой области?`);
+        });
+
+        avatarOptions.forEach(option => {
+            option.addEventListener('click', () => {
+                avatarOptions.forEach(opt => opt.classList.remove('selected'));
+                option.classList.add('selected');
+                document.documentElement.style.setProperty('--primary-color', option.style.backgroundColor);
+            });
+        });
+
+        themeOptions.forEach(option => {
+            option.addEventListener('click', () => {
+                themeOptions.forEach(opt => opt.classList.remove('selected'));
+                option.classList.add('selected');
+                applyTheme(option.style.backgroundColor);
+            });
+        });
+
+        function applyTheme(backgroundColor) {
+            const isDark = isColorDark(backgroundColor);
+            document.body.classList.toggle('dark-mode', isDark);
+            document.documentElement.style.setProperty('--secondary-color', backgroundColor);
+            document.documentElement.style.setProperty('--text-color', isDark ? '#ffffff' : '#343541');
+        }
+
+        function isColorDark(color) {
+            const rgb = parseInt(color.slice(1), 16);
+            const r = (rgb >> 16) & 0xff;
+            const g = (rgb >>  8) & 0xff;
+            const b = (rgb >>  0) & 0xff;
+            const luma = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+            return luma < 128;
+        }
+
+        hamburgerMenu.addEventListener('click', (e) => {
+            e.stopPropagation(); // Prevent the click from propagating to the document
+            sidebar.classList.toggle('open');
+            hamburgerMenu.classList.toggle('open');
+        });
+
+        sidebar.addEventListener('click', (e) => {
+            e.stopPropagation();
+        });
+
+        document.addEventListener('click', (e) => {
+            if (window.innerWidth <= 768 && !sidebar.contains(e.target) && !hamburgerMenu.contains(e.target)) {
+                sidebar.classList.remove('open');
+                hamburgerMenu.classList.remove('open');
+            }
+        });
+
+        window.addEventListener('resize', () => {
+            if (window.innerWidth > 768) {
+                sidebar.classList.remove('open');
+                hamburgerMenu.classList.remove('open');
+            }
+        });
+
+        addMessage("Здравствуйте! Я улучшенный ИИ-ассистент. Готов ответить на ваши вопросы и обсудить интересующие вас темы. О чем бы вы хотели поговорить сегодня?");
     </script>
 </body>
 </html>
